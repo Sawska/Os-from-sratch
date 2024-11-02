@@ -33,6 +33,7 @@ public:
         bool inUpdateCursor = false
     );
     static void ShowCursor(bool inMode);
+    static void TextOutChar(char c, int x, int y, int fgColor, int bgColor);
 };
 
 #endif // CDISPLAY_H

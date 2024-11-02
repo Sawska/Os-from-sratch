@@ -1,32 +1,33 @@
 #include "CDisplay.h"
 #include "CString.h"
+#include <stdint.h>
 
 void CDisplay::ClearScreen() {
-    __asm {
-        mov ah, 0x0C 
-        int 0x10
+    unsigned short* videoMemory = (unsigned short*)0xB8000;
+    unsigned short blank = (0x0F << 8) | ' ';
+
+    for (int i = 0; i < 80 * 25; i++) {  
+        videoMemory[i] = blank;
     }
 }
 
-void CDisplay::TextOut(const char* inStrSource, byte inX, byte inY, byte inBackgroundColor, byte inTextColor, bool inUpdateCursor)
-{
-byte textAttribute = ((inTextColor) | (inBackgroundColor << 4));
+void CDisplay::TextOut(const char* inStrSource, byte inX, byte inY, byte inBackgroundColor, byte inTextColor, bool inUpdateCursor) {
+    byte textAttribute = ((inTextColor) | (inBackgroundColor << 4));
     byte lengthOfString = CString::Strlen(inStrSource);
+    
+    unsigned short* videoMemory = (unsigned short*)0xB8000;
+    int offset = inY * 80 + inX;
 
-    __asm {
-        push bp
-        mov al, inUpdateCursor
-        xor bh, bh
-        mov bl, textAttribute
-        xor cx, cx
-        mov cl, lengthOfString
-        mov dh, inY
-        mov dl, inX
-        mov es, word ptr[inStrSource + 2]
-        mov bp, word ptr[inStrSource]
-        mov ah, 0x0E  
-        int 0x10
-        pop bp
+    for (int i = 0; i < lengthOfString; ++i) {
+        videoMemory[offset + i] = (textAttribute << 8) | inStrSource[i];
+    }
+
+    if (inUpdateCursor) {
+        int cursorPos = offset + lengthOfString;
+        outb(0x3D4, 0x0F);
+        outb(0x3D5, (unsigned char)(cursorPos & 0xFF));
+        outb(0x3D4, 0x0E);
+        outb(0x3D5, (unsigned char)((cursorPos >> 8) & 0xFF));
     }
 }
 
@@ -38,4 +39,18 @@ void CDisplay::ShowCursor(bool inMode) {
         mov ah, 0x01  
         int 0x10
     }
+}
+
+void CDisplay::TextOutChar(char c, int x, int y, int fgColor, int bgColor) {
+    unsigned short* videoMemory = (unsigned short*)0xB8000;
+    int offset = y * 80 + x;
+
+    unsigned short attribute = (bgColor << 4) | (fgColor & 0x0F);
+
+    videoMemory[offset] = (attribute << 8) | c;
+}
+
+
+static inline void outb(uint16_t port, uint8_t value) {
+    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }

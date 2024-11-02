@@ -1,5 +1,6 @@
 #include "CDisplay.h"
 #define HELLO_STR  "\"Hello, world…\", from low-level..."
+#include "Interrupts.h"
 extern "C" void BootMain()
 {
     CDisplay::ClearScreen();
@@ -12,5 +13,15 @@ extern "C" void BootMain()
         WHITE,
         false
     );
+
+    InitializeIDT();
+
+    
+    asm volatile ("sti");
+
+ 
+    while (true) {
+ 
+    }
     return;
 }
