@@ -33,13 +33,18 @@ void CDisplay::TextOut(const char* inStrSource, byte inX, byte inY, byte inBackg
 
 void CDisplay::ShowCursor(bool inMode) {
     byte flag = inMode ? 0 : 0x20;
-    __asm {
-        mov ch, flag
-        mov cl, 0x20
-        mov ah, 0x01  
-        int 0x10
-    }
+
+    asm volatile (
+        "movb %0, %%ch;"    
+        "movb $0x20, %%cl;"  
+        "movb $0x01, %%ah;"  
+        "int $0x10;"         
+        :
+        : "r"(flag)          
+        : "%eax", "%ebx", "%ecx", "%edx"
+    );
 }
+
 
 void CDisplay::TextOutChar(char c, int x, int y, int fgColor, int bgColor) {
     unsigned short* videoMemory = (unsigned short*)0xB8000;

@@ -1,0 +1,15 @@
+#ifndef SYSCALL_H
+#define SYSCALL_H
+
+enum SyscallNumber {
+    SYSCALL_OPEN = 1,
+    SYSCALL_EXIT,
+    SYSCALL_CLOSE,
+    SYSCALL_READ,
+    SYSCALL_WRITE,
+    SYSCALL_MKDIR,
+    SYSCALL_UNLINK,
+    SYSCALL_CREATE_PROCESS
+};
+
+#endif // SYSCALL_H

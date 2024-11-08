@@ -13,6 +13,20 @@
 
 enum ProcessState { NEW, READY, RUNNING, WAITING, TERMINATED };
 
+struct PageTableEntry {
+    int frameNumber;  
+    bool present;     
+    bool readOnly;    
+};
+
+class PageTable {
+public:
+    std::vector<PageTableEntry> entries;
+    PageTable(size_t size) : entries(size) {}
+
+  
+};
+
 struct PCB {
     int processID;
     ProcessState state;
@@ -20,7 +34,7 @@ struct PCB {
     int stackPointer;
     int programCounter;
     int priority;
-    int* pageTable;
+    PageTable* pageTable;
 };
 
 std::queue<PCB*> readyQueue;
