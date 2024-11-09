@@ -1,4 +1,3 @@
-// kernel.cpp
 #include "filesystem.h"
 #include "pcb.h"
 #include "journal.h"

@@ -6,12 +6,16 @@
 #include <queue>
 #include "Page.h"
 
+
+
 #define MAX_REGISTERS 8
 #define SYSCALL_CREATE 1
 #define SYSCALL_EXIT 2
 #define SYSCALL_YIELD 3
 
 enum ProcessState { NEW, READY, RUNNING, WAITING, TERMINATED };
+
+
 
 struct PageTableEntry {
     int frameNumber;  
@@ -56,6 +60,11 @@ int initializeStack() {
     return STACK_BASE_VIRTUAL_ADDRESS + STACK_SIZE - 4;
 }
 
+PCB* currentProcess = nullptr;
+
+PCB* getCurrentProcess() {
+    return currentProcess;
+}
 
 PCB* findProcess(int processID) {
     for (auto* process : processTable) {
@@ -65,6 +74,13 @@ PCB* findProcess(int processID) {
     }
     return nullptr;
 }
+
+int nextPID = 1;  
+
+int generateNewPID() {
+    return nextPID++;
+}
+
 
 void runProcess(PCB* process) {
     std::cout << "Running process: " << process->processID << std::endl;
