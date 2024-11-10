@@ -29,7 +29,7 @@ DirectoryEntry directory[MAX_FILES];
 FileAllocationTable fat;
 
 void formatDisk() {
-    Superblock superblock = {MAX_BLOCKS, MAX_BLOCKS - 1, 1}; // Root at block 1
+    Superblock superblock = {MAX_BLOCKS, MAX_BLOCKS - 1, 1};
     FileAllocationTable fat = {0};  
 
     DirectoryEntry root = {"root", 0, 1, 1};
@@ -132,6 +132,18 @@ int open(const char* path) {
     }
     return -1;  
 }
+
+bool changeDirectory(const char* path) {
+    int dirIndex = findFile(path); 
+    if (dirIndex < 0) return false;
+
+    DirectoryEntry* entry = &directory[dirIndex];
+    if (entry->isDirectory) {
+        return true;
+    }
+    return false;  
+}
+
 
 
 void close(int fd) {

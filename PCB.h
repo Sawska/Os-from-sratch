@@ -15,6 +15,23 @@
 
 enum ProcessState { NEW, READY, RUNNING, WAITING, TERMINATED };
 
+struct Memory {
+    char* data;  
+    size_t size;
+
+    Memory(size_t s) : size(s) {
+        data = new char[size];
+    }
+
+    ~Memory() {
+        delete[] data;
+    }
+
+    int getEntryPoint() const {
+        return 0;
+    }
+};
+
 
 
 struct PageTableEntry {
@@ -33,13 +50,20 @@ public:
 
 struct PCB {
     int processID;
+    int parentProcessID;  
     ProcessState state;
     int registers[MAX_REGISTERS];
     int stackPointer;
     int programCounter;
     int priority;
     PageTable* pageTable;
+    int status;
+    Memory* memory;      
+    int entryPoint;
 };
+
+
+
 
 std::queue<PCB*> readyQueue;
 std::vector<PCB*> processTable;
@@ -174,4 +198,54 @@ void schedule() {
     }
 }
 
+void addProcessToScheduler(PCB* process) {
+    process->state = READY; 
+    readyQueue.push(process);
+}
+
+void freeProcessResources(PCB* process) {
+    if (process->pageTable) {
+        delete process->pageTable;
+        process->pageTable = nullptr;
+    }
+}
+
+void removeProcessFromScheduler(PCB* process) {
+    std::queue<PCB*> tempQueue;
+    while (!readyQueue.empty()) {
+        PCB* p = readyQueue.front();
+        readyQueue.pop();
+        if (p != process) {
+            tempQueue.push(p);
+        }
+    }
+    std::swap(readyQueue, tempQueue);
+
+    auto it = std::remove(processTable.begin(), processTable.end(), process);
+    if (it != processTable.end()) {
+        processTable.erase(it);
+    }
+}
+
+void clearProcessMemory(PCB* process) {
+    if (process->memory) {
+        delete process->memory;
+        process->memory = nullptr;
+    }
+}
+
+bool loadProgramIntoMemory(const char* path, Memory*& memory) {
+    memory = new Memory(1024);  
+    std::fill(memory->data, memory->data + memory->size, 0);  
+    return true;  
+}
+void setProgramCounter(int entryPoint) {
+    PCB* process = getCurrentProcess();
+    process->programCounter = entryPoint;
+}
+
+
+
+
 #endif // PCB_H
+
