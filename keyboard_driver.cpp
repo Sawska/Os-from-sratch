@@ -95,33 +95,81 @@ void registerInterruptHandler(uint8_t interruptNumber, void (*handler)()) {
 
 char processScancode(uint8_t scancode) {
     switch (scancode) {
-        case 0x1E: return 'A';  
-        case 0x30: return 'B';  
-        case 0x2E: return 'C';  
-        case 0x20: return 'D';  
+        case 0x1E: return 'A'; case 0x30: return 'B'; case 0x2E: return 'C'; case 0x20: return 'D';
+        case 0x12: return 'E'; case 0x21: return 'F'; case 0x22: return 'G'; case 0x23: return 'H';
+        case 0x17: return 'I'; case 0x24: return 'J'; case 0x25: return 'K'; case 0x26: return 'L';
+        case 0x32: return 'M'; case 0x31: return 'N'; case 0x18: return 'O'; case 0x19: return 'P';
+        case 0x10: return 'Q'; case 0x13: return 'R'; case 0x1F: return 'S'; case 0x14: return 'T';
+        case 0x16: return 'U'; case 0x2F: return 'V'; case 0x11: return 'W'; case 0x2D: return 'X';
+        case 0x15: return 'Y'; case 0x2C: return 'Z';
 
-        case 0x1C: return 'E';  
+        case 0x02: return '1'; case 0x03: return '2'; case 0x04: return '3'; case 0x05: return '4';
+        case 0x06: return '5'; case 0x07: return '6'; case 0x08: return '7'; case 0x09: return '8';
+        case 0x0A: return '9'; case 0x0B: return '0';
+
+        case 0x39: return ' ';     
+        case 0x1C: return '\n';    
+        case 0x0E: return '\b';    
+
+        case 0x1A: return '['; case 0x1B: return ']';
+        case 0x27: return ';'; case 0x28: return '\'';
+        case 0x33: return ','; case 0x34: return '.';
+        case 0x35: return '/';
+
+        case 0x3B: return 'F1'; case 0x3C: return 'F2'; case 0x3D: return 'F3';
+        case 0x3E: return 'F4'; case 0x3F: return 'F5'; case 0x40: return 'F6';
+        case 0x41: return 'F7'; case 0x42: return 'F8'; case 0x43: return 'F9';
+        case 0x44: return 'F10'; case 0x57: return 'F11'; case 0x58: return 'F12';
 
         default: return '?';  
     }
 }
 
+void registerKeyboardInterrupt() {
+    registerInterruptHandler(33, []() {
+        uint8_t scancode = keyboardPort(); 
+        char character = processScancode(scancode);
+        if (character != '?') {
+            std::cout << character;
+        }
+    });
+}
 
+void registerMouseInterrupt() {
+    registerInterruptHandler(44, []() {
+        int8_t data[3] = {0}; 
+        readMousePort(data);  
+        processMouseData(data);
+    });
+}
+
+
+int mouseX = 40;
+int mouseY = 12;
 
 void processMouseData(int8_t* data) {
-    
     bool leftButton = data[0] & 0x01;
     bool rightButton = data[0] & 0x02;
     bool middleButton = data[0] & 0x04;
 
-    
     int8_t xMovement = data[1];
     int8_t yMovement = data[2];
 
+    mouseX += xMovement;
+    mouseY -= yMovement;  
+
+    if (mouseX < 0) mouseX = 0;
+    if (mouseY < 0) mouseY = 0;
+    if (mouseX > 80) mouseX = 80;
+    if (mouseY > 24) mouseY = 24;
+
+    drawMouse(mouseX, mouseY);
 
     std::cout << "Mouse Buttons: ";
-    std::cout << (leftButton ? "Left " : "") << (rightButton ? "Right " : "") << (middleButton ? "Middle " : "") << std::endl;
-
+    if (leftButton) std::cout << "Left ";
+    if (rightButton) std::cout << "Right ";
+    if (middleButton) std::cout << "Middle ";
+    std::cout << "\n";
 
     std::cout << "Mouse Movement: X = " << (int)xMovement << ", Y = " << (int)yMovement << std::endl;
 
@@ -131,4 +179,36 @@ void processMouseData(int8_t* data) {
     if (rightButton) {
         std::cout << "Right button clicked!" << std::endl;
     }
+}
+
+#include <stdint.h>
+
+uint8_t keyboardPort() {
+    uint8_t scancode;
+    __asm__ volatile ("inb %1, %0" : "=a"(scancode) : "Nd"(0x60));
+    return scancode;
+}
+
+#include <stdint.h>
+
+void readMousePort(int8_t* data) {
+    for (int i = 0; i < 3; i++) {
+        __asm__ volatile ("inb %1, %0" : "=a"(data[i]) : "Nd"(0x60));
+    }
+}
+
+
+#include <SFML/Graphics.hpp>
+
+
+
+
+
+void drawMouse(sf::RenderWindow& window, int x, int y) {
+
+    sf::CircleShape cursor(5); 
+    cursor.setPosition(x, y);
+    cursor.setFillColor(sf::Color::Red);
+
+    window.draw(cursor);
 }

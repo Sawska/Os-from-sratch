@@ -59,3 +59,8 @@ void CDisplay::TextOutChar(char c, int x, int y, int fgColor, int bgColor) {
 static inline void outb(uint16_t port, uint8_t value) {
     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
+
+void CDisplay::TextOutInt(int number, int x, int y, int bgColor, int fgColor) {
+    std::string numStr = std::to_string(number);
+        TextOut(numStr.c_str(), x, y, bgColor, fgColor, false);
+    }

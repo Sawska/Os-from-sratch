@@ -20,6 +20,8 @@
 
 #include "Types.h"
 #include "CString.h"
+#include <cstdint>  // Include for uint8_t and uint32_t
+#include <string>
 
 class CDisplay {
 public:
@@ -34,6 +36,7 @@ public:
     );
     static void ShowCursor(bool inMode);
     static void TextOutChar(char c, int x, int y, int fgColor, int bgColor);
+    static void TextOutInt(int number, int x, int y, int bgColor, int fgColor);
 };
 
 #endif // CDISPLAY_H
