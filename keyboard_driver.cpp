@@ -3,16 +3,18 @@
 #include <queue>
 #include <vector>
 #include <iostream>
+#include "CDisplay.h"
+#include <stdint.h>
+#include <SFML/Graphics.hpp>
 
 
 #define KEYBOARD_PORT 0x60
 #define MOUSE_PORT 0x60
 #define KEYBOARD_INTERRUPT 0x21 
 #define MOUSE_INTERRUPT 0x2C    
-std::queue<char> shellInputBuffer;
 std::unordered_map<uint8_t, void (*)()> interruptVectorTable;
 
-
+int y = 0;
 
 extern "C" void keyboardInterruptHandler() {
     uint8_t scancode = inb(KEYBOARD_PORT);
@@ -130,7 +132,7 @@ void registerKeyboardInterrupt() {
         uint8_t scancode = keyboardPort(); 
         char character = processScancode(scancode);
         if (character != '?') {
-            std::cout << character;
+            CDisplay::TextOutChar(character,0,y++,BLACK,WHITE);
         }
     });
 }
@@ -165,23 +167,22 @@ void processMouseData(int8_t* data) {
 
     drawMouse(mouseX, mouseY);
 
-    std::cout << "Mouse Buttons: ";
-    if (leftButton) std::cout << "Left ";
-    if (rightButton) std::cout << "Right ";
-    if (middleButton) std::cout << "Middle ";
-    std::cout << "\n";
+    if (leftButton) CDisplay::TextOut("Left ",0,y++,BLACK,WHITE);
+    if (rightButton) CDisplay::TextOut("Right",0,y++,BLACK,WHITE);
+    if (middleButton) CDisplay::TextOut("Middle",0,y++,BLACK,WHITE);
+    CDisplay::TextOutChar("\n",0,y++,BLACK,WHITE);
 
-    std::cout << "Mouse Movement: X = " << (int)xMovement << ", Y = " << (int)yMovement << std::endl;
+    CDisplay::TextOut("Mouse Movement: X = " + (int)xMovement + ", Y = " +(int)yMovement,0,y++,BLACK,WHITE);
+
 
     if (leftButton) {
-        std::cout << "Left button clicked!" << std::endl;
+        CDisplay::TextOut("Left button clicked!",0,y++,BLACK,WHITE);
     }
     if (rightButton) {
-        std::cout << "Right button clicked!" << std::endl;
+        CDisplay::TextOut("Right button clicked!",0,y++,BLACK,WHITE);
     }
 }
 
-#include <stdint.h>
 
 uint8_t keyboardPort() {
     uint8_t scancode;
@@ -189,7 +190,6 @@ uint8_t keyboardPort() {
     return scancode;
 }
 
-#include <stdint.h>
 
 void readMousePort(int8_t* data) {
     for (int i = 0; i < 3; i++) {
@@ -198,7 +198,7 @@ void readMousePort(int8_t* data) {
 }
 
 
-#include <SFML/Graphics.hpp>
+
 
 
 

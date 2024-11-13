@@ -2,6 +2,7 @@
 #define FILESYSTEM_H
 
 #include <stdint.h>
+#include "Journal.h"
 
 #define MAX_FILES 128     
 #define BLOCK_SIZE 512    
@@ -169,6 +170,8 @@ int read(int fd, void* buffer, int size) {
         int toRead = size - bytesRead < BLOCK_SIZE ? size - bytesRead : BLOCK_SIZE;
         memcpy((uint8_t*)buffer + bytesRead, tempBuffer + position, toRead);
 
+        logReadOperation(fd, currentBlock, toRead, position);
+
         bytesRead += toRead;
         position = 0; 
         currentBlock = fat.blocks[currentBlock];
@@ -178,6 +181,7 @@ int read(int fd, void* buffer, int size) {
     return bytesRead;
 }
 
+
 int write(int fd, const void* buffer, int size) {
     if (fd < 0 || fd >= MAX_OPEN_FILES || openFiles[fd].entry == nullptr) return -1;
 
@@ -186,6 +190,9 @@ int write(int fd, const void* buffer, int size) {
     int bytesWritten = 0;
     int currentBlock = file->startBlock;
     int position = fileDesc->position;
+    uint32_t transactionID = ++currentTransactionID;
+
+    startTransaction(transactionID);
 
     while (bytesWritten < size) {
         if (currentBlock == END_OF_FILE) {
@@ -200,6 +207,9 @@ int write(int fd, const void* buffer, int size) {
 
         int toWrite = size - bytesWritten < BLOCK_SIZE ? size - bytesWritten : BLOCK_SIZE;
         memcpy(tempBuffer + position, (uint8_t*)buffer + bytesWritten, toWrite);
+
+        logWriteOperation(transactionID, currentBlock, tempBuffer);
+        
         writeBlock(currentBlock, tempBuffer);
 
         bytesWritten += toWrite;
@@ -207,9 +217,11 @@ int write(int fd, const void* buffer, int size) {
         currentBlock = fat.blocks[currentBlock];
     }
 
+    commitTransaction(transactionID);
     fileDesc->position += bytesWritten;
     return bytesWritten;
 }
+
 
 bool mkdir(const char* name) {
     if (findFile(name) >= 0) return false; 
@@ -217,18 +229,27 @@ bool mkdir(const char* name) {
     int dirIndex = findFreeDirectoryEntry();
     int startBlock = findFreeBlock();
     if (dirIndex < 0 || startBlock < 0) return false;
-
     DirectoryEntry newDir;
     strncpy(newDir.filename, name, FILENAME_MAX_LEN);
     newDir.size = 0;
     newDir.startBlock = startBlock;
     newDir.isDirectory = 1;
 
+
+    JournalEntry entry;
+    entry.operation = CREATE_DIR;
+    entry.dirIndex = dirIndex;
+    entry.entry = newDir;
+    entry.blockNumber = startBlock;
+    entry.timestamp = time(0);
+    logJournalEntry(entry);
+
     directory[dirIndex] = newDir;
     fat.blocks[startBlock] = END_OF_FILE;
 
     return true;
 }
+
 
 
 bool unlink(const char* path) {
@@ -238,14 +259,24 @@ bool unlink(const char* path) {
     DirectoryEntry* entry = &directory[dirIndex];
     int currentBlock = entry->startBlock;
 
+    JournalEntry journalEntry;
+    journalEntry.operation = REMOVE_DIR;
+    journalEntry.dirIndex = dirIndex;
+    journalEntry.entry = *entry;
+    journalEntry.blockNumber = entry->startBlock;
+    journalEntry.timestamp = time(0);  
+    logJournalEntry(journalEntry);
+
     while (currentBlock != END_OF_FILE) {
         int nextBlock = fat.blocks[currentBlock];
         fat.blocks[currentBlock] = 0; 
         currentBlock = nextBlock;
     }
+
     memset(entry, 0, sizeof(DirectoryEntry));
     return true;
 }
+
 
 void updateFileSystemState() {
     writeBlock(0, (uint8_t*)&superblock);

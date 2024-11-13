@@ -21,4 +21,6 @@ void registerInterruptHandler(uint8_t interruptNumber, void (*handler)());
 char processScancode(uint8_t scancode);
 void processMouseData(int8_t* data);   
 
+std::queue<char> shellInputBuffer;
+
 #endif // KEYBOARD_DRIVER_H

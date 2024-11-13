@@ -107,14 +107,12 @@ int generateNewPID() {
 
 
 void runProcess(PCB* process) {
-    std::cout << "Running process: " << process->processID << std::endl;
     process->state = RUNNING;
 
     process->programCounter += 4;
 }
 
 void saveProcessState(PCB* process) {
-    std::cout << "Saving state of process: " << process->processID << std::endl;
 
 
     for (int i = 0; i < MAX_REGISTERS; i++) {
@@ -124,7 +122,6 @@ void saveProcessState(PCB* process) {
 }
 
 void restoreProcessState(PCB* process) {
-    std::cout << "Restoring state of process: " << process->processID << std::endl;
 
     process->programCounter = process->stackPointer - 100;
 }

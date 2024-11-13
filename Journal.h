@@ -11,13 +11,36 @@ const uint8_t OPERATION_START = 0;
 const uint8_t OPERATION_WRITE = 1;
 const uint8_t OPERATION_COMMIT = 2;
 
+enum JournalOperation {
+    CREATE_DIR,
+    REMOVE_DIR
+};
+
 struct JournalEntry {
     uint32_t transactionID;
     uint8_t operationType; 
     uint32_t blockNumber;  
     uint32_t fileID;       
     uint8_t data[BLOCK_SIZE];
+    JournalOperation operation;
+    int dirIndex;   
+    DirectoryEntry entry;
+    time_t timestamp; 
 };
+
+
+void logJournalEntry(const JournalEntry& entry) {
+    std::ofstream journal("journal.log", std::ios::app);  // Open the journal file in append mode
+    if (journal.is_open()) {
+        time_t now = time(0);
+        journal << "Operation: " << (entry.operation == CREATE_DIR ? "CREATE_DIR" : "REMOVE_DIR")
+                << ", DirIndex: " << entry.dirIndex
+                << ", Filename: " << entry.entry.filename
+                << ", StartBlock: " << entry.blockNumber
+                << ", Timestamp: " << ctime(&now)
+                << std::endl;
+    }
+}
 
 
 #include <fstream>
@@ -108,4 +131,19 @@ void recoverFromJournal() {
     clearJournal();
 }
 
+void logReadOperation(int fd, int block, int bytesRead, int position) {
+    std::ofstream journal("journal.log", std::ios::app);
+    if (journal.is_open()) {
+        time_t now = time(0);
+        journal << "READ Operation: "
+                << "FD: " << fd
+                << ", Block: " << block
+                << ", Bytes: " << bytesRead
+                << ", Position: " << position
+                << ", Time: " << ctime(&now)
+                << std::endl;
+    }
+}
+
 #endif // JOURNAL_H
+
