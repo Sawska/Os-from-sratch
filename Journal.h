@@ -13,7 +13,8 @@ const uint8_t OPERATION_COMMIT = 2;
 
 enum JournalOperation {
     CREATE_DIR,
-    REMOVE_DIR
+    REMOVE_DIR,
+    OPEN_FILE
 };
 
 struct JournalEntry {
@@ -145,5 +146,4 @@ void logReadOperation(int fd, int block, int bytesRead, int position) {
     }
 }
 
-#endif // JOURNAL_H
-
+#endif

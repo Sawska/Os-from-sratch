@@ -122,10 +122,18 @@ void writeBlock(int blockNum, uint8_t* buffer);
 
 int open(const char* path) {
     int dirIndex = findFile(path);
-    if (dirIndex < 0) return -1;  
+    if (dirIndex < 0) return -1;
 
     for (int i = 0; i < MAX_OPEN_FILES; i++) {
         if (openFiles[i].entry == nullptr) {
+            JournalEntry entry;
+            entry.operation = OPEN_FILE;
+            entry.dirIndex = dirIndex;
+            entry.entry = directory[dirIndex];
+            entry.blockNumber = directory[dirIndex].startBlock;
+            entry.timestamp = time(0);
+            logJournalEntry(entry);
+
             openFiles[i].entry = &directory[dirIndex];
             openFiles[i].position = 0;
             return i;
@@ -133,6 +141,7 @@ int open(const char* path) {
     }
     return -1;  
 }
+
 
 bool changeDirectory(const char* path) {
     int dirIndex = findFile(path); 
@@ -321,17 +330,4 @@ void readBlock(int blockNum, uint8_t* buffer) {
 
 
 void writeBlock(int blockNum, uint8_t* buffer) {
-    if (blockNum >= 0 && blockNum < MAX_BLOCKS) {
-        memcpy(disk[blockNum], buffer, BLOCK_SIZE); 
-    }
-}
-
-int readFileDescriptor(int fd, void* buffer, int size) {
-    if (fd < 0 || fd >= MAX_OPEN_FILES || openFiles[fd].entry == nullptr) {
-        return -1; 
-    }
-    return read(fd, buffer, size);
-}
-
-
-#endif //FILESYSTEM_H
+    if (blockNum >= 0 && blockNum

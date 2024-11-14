@@ -5,7 +5,7 @@
 #include <iostream>
 #include "CDisplay.h"
 #include <stdint.h>
-#include <SFML/Graphics.hpp>
+#include <sstream>
 
 
 #define KEYBOARD_PORT 0x60
@@ -165,14 +165,15 @@ void processMouseData(int8_t* data) {
     if (mouseX > 80) mouseX = 80;
     if (mouseY > 24) mouseY = 24;
 
-    drawMouse(mouseX, mouseY);
 
     if (leftButton) CDisplay::TextOut("Left ",0,y++,BLACK,WHITE);
     if (rightButton) CDisplay::TextOut("Right",0,y++,BLACK,WHITE);
     if (middleButton) CDisplay::TextOut("Middle",0,y++,BLACK,WHITE);
-    CDisplay::TextOutChar("\n",0,y++,BLACK,WHITE);
+    CDisplay::TextOutChar('\n',0,y++,BLACK,WHITE);
 
-    CDisplay::TextOut("Mouse Movement: X = " + (int)xMovement + ", Y = " +(int)yMovement,0,y++,BLACK,WHITE);
+    std::ostringstream oss;
+    oss << "Mouse Movement: X = " << xMovement << ", Y = " << yMovement;
+    CDisplay::TextOut(oss.str().c_str(), 0, y++, BLACK, WHITE);
 
 
     if (leftButton) {
@@ -201,14 +202,3 @@ void readMousePort(int8_t* data) {
 
 
 
-
-
-
-void drawMouse(sf::RenderWindow& window, int x, int y) {
-
-    sf::CircleShape cursor(5); 
-    cursor.setPosition(x, y);
-    cursor.setFillColor(sf::Color::Red);
-
-    window.draw(cursor);
-}
